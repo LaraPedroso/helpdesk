@@ -1,0 +1,104 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+    admin
+    tech
+    customer
+}
+
+enum CallStatus {
+    open
+    in_progress
+    closed
+}
+
+
+model User {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  password   String
+  avatarUrl  String? 
+
+  role       UserRole @default(customer)
+
+  schedules   TechnicianSchedule[]
+  addedServices CalledService[]
+
+  createdCalls Called[]        @relation("CustomerCalls")
+  assignedCalls Called[]       @relation("TechCalls")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("users")
+}
+model Service {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  category    String
+  price       Float
+  isActive    Boolean  @default(true)
+
+  calls       CalledService[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("services")
+}
+
+
+model Called {
+  id           Int         @id @default(autoincrement())
+  title        String
+  description  String
+  status       CallStatus  @default(open)
+  priority     String
+
+  customerId   Int
+  technicianId Int
+
+  services     CalledService[]
+
+  customer     User        @relation("CustomerCalls", fields: [customerId], references: [id], onDelete: Cascade)
+  technician   User        @relation("TechCalls", fields: [technicianId], references: [id])
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("calls")
+}
+
+
+
+model CalledService {
+  id         Int      @id @default(autoincrement())
+  calledId   Int
+  serviceId  Int
+  addedById  Int
+  addedAt    DateTime @default(now())
+
+  called     Called   @relation(fields: [calledId], references: [id])
+  service    Service  @relation(fields: [serviceId], references: [id])
+  addedBy    User     @relation(fields: [addedById], references: [id])
+}
+
+model TechnicianSchedule {
+  id        Int      @id @default(autoincrement())
+  userId    Int      
+  startTime String   
+  endTime   String   
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("technician_schedules")
+}
