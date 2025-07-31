@@ -12,9 +12,12 @@ class UsersController {
                 password: z
                     .string()
                     .min(6, "Password must be at least 6 characters"),
+                role: z.enum(["admin", "tech"]).optional(),
             });
 
-            const { name, email, password } = bodySchema.parse(request.body);
+            const { name, email, password, role } = bodySchema.parse(
+                request.body
+            );
 
             // returns the first record in a list that matches your criteria
             const userSameEmail = await prisma.user.findFirst({
@@ -35,6 +38,7 @@ class UsersController {
                     name,
                     email,
                     password: hashedPassword,
+                    role,
                 },
             });
 
