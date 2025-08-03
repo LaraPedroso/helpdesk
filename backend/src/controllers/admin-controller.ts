@@ -78,6 +78,82 @@ class AdminController {
         }
     }
 
+    async index(request: Request, response: Response, next: NextFunction) {
+        try {
+            const users = await prisma.user.findMany({
+                where: { role: "tech" },
+                include: {
+                    schedules: true,
+                },
+            });
+
+            const usersWithoutPassword = users.map(
+                ({ password, ...user }) => user
+            );
+
+            if (users.length === 0) {
+                throw new AppError("No technicians found", 404);
+            }
+
+            return response.status(200).json(usersWithoutPassword);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async update(request: Request, response: Response, next: NextFunction) {
+        try {
+            const bodySchema = z.object({
+                name: z.string().min(1, "Name is required"),
+                password: z.string().optional(),
+                schedule: z.object({
+                    start: z.string().optional(),
+                    end: z.string().optional(),
+                }),
+            });
+
+            const { id } = request.params;
+            const { name, password, schedule } = bodySchema.parse(request.body);
+
+            const user = await prisma.user.findUnique({
+                where: { id: Number(id) },
+                include: { schedules: true },
+            });
+
+            if (!user) {
+                throw new AppError("User not found", 404);
+            }
+
+            await prisma.user.update({
+                where: { id: Number(id) },
+                data: {
+                    name,
+                    password: password
+                        ? await hash(password, 8)
+                        : user.password,
+                    schedules: {
+                        update: {
+                            where: {
+                                id: user.schedules[0].id,
+                            },
+                            data: {
+                                startTime:
+                                    schedule.start ??
+                                    user.schedules[0].startTime,
+                                endTime:
+                                    schedule.end ?? user.schedules[0].endTime,
+                            },
+                        },
+                    },
+                },
+            });
+
+            return response.status(200).json("User updated successfully");
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async delete(request: Request, response: Response, next: NextFunction) {
         try {
             const { id } = request.params;
