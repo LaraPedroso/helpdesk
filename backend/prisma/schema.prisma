@@ -9,7 +9,7 @@ datasource db {
 
 enum UserRole {
     admin
-    tech
+    engineer
     customer
 }
 
@@ -29,11 +29,11 @@ model User {
 
   role       UserRole @default(customer)
 
-  schedules   TechnicianSchedule[]
+  schedules   EngineerSchedule[]
   addedServices CalledService[]
 
   createdCalls Called[]        @relation("CustomerCalls")
-  assignedCalls Called[]       @relation("TechCalls")
+  assignedCalls Called[]       @relation("EngineerCalls")
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -65,12 +65,12 @@ model Called {
   priority     String
 
   customerId   Int
-  technicianId Int
+  engineerId   Int
 
   services     CalledService[]
 
   customer     User        @relation("CustomerCalls", fields: [customerId], references: [id], onDelete: Cascade)
-  technician   User        @relation("TechCalls", fields: [technicianId], references: [id])
+  engineer     User        @relation("EngineerCalls", fields: [engineerId], references: [id])
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -92,13 +92,12 @@ model CalledService {
   addedBy    User     @relation(fields: [addedById], references: [id])
 }
 
-model TechnicianSchedule {
+model EngineerSchedule {
   id        Int      @id @default(autoincrement())
   userId    Int      
-  startTime String   
-  endTime   String   
+  hours     String[]
 
   user User @relation(fields: [userId], references: [id])
 
-  @@map("technician_schedules")
+  @@map("engineer_schedules")
 }

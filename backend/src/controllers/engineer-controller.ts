@@ -6,7 +6,7 @@ import { hash } from "bcrypt";
 import { Request, Response, NextFunction } from "express";
 import z from "zod";
 
-class AdminController {
+class EngineerController {
     async create(request: Request, response: Response, next: NextFunction) {
         try {
             const bodySchema = z.object({
@@ -15,8 +15,7 @@ class AdminController {
                 password: z.string().optional(),
                 role: z.string().optional(),
                 schedule: z.object({
-                    start: z.string().optional(),
-                    end: z.string().optional(),
+                    hours: z.array(z.string()).optional(),
                 }),
             });
 
@@ -28,9 +27,9 @@ class AdminController {
                 where: { email },
             });
 
-            if (role !== "tech") {
+            if (role !== "engineer") {
                 throw new AppError(
-                    "Admin users can only create accounts with 'tech' role",
+                    "Admin users can only create accounts with 'engineer' role",
                     400
                 );
             }
@@ -40,11 +39,11 @@ class AdminController {
             }
 
             const passwordTemporary =
-                role === "tech" ? generatePassword() : password;
+                role === "engineer" ? generatePassword() : password;
 
             const hashedPassword = await hash(passwordTemporary ?? "", 8);
 
-            if (role === "tech") {
+            if (role === "engineer") {
                 await sendMail(
                     email,
                     "Sua senha temporária - Sistema HelpDesk",
@@ -60,8 +59,16 @@ class AdminController {
                     schedules: {
                         create: [
                             {
-                                startTime: schedule.start ?? "08:00",
-                                endTime: schedule.end ?? "17:00",
+                                hours: schedule?.hours ?? [
+                                    "08:00",
+                                    "09:00",
+                                    "10:00",
+                                    "11:00",
+                                    "14:00",
+                                    "15:00",
+                                    "16:00",
+                                    "17:00",
+                                ],
                             },
                         ],
                     },
@@ -81,7 +88,7 @@ class AdminController {
     async index(request: Request, response: Response, next: NextFunction) {
         try {
             const users = await prisma.user.findMany({
-                where: { role: "tech" },
+                where: { role: "engineer" },
                 include: {
                     schedules: true,
                 },
@@ -107,12 +114,14 @@ class AdminController {
                 name: z.string().min(1, "Name is required"),
                 password: z.string().optional(),
                 schedule: z.object({
-                    start: z.string().optional(),
-                    end: z.string().optional(),
+                    hours: z.array(z.string()).optional(),
                 }),
             });
+            const paramsSchema = z.object({
+                id: z.string(),
+            });
 
-            const { id } = request.params;
+            const { id } = paramsSchema.parse(request.params);
             const { name, password, schedule } = bodySchema.parse(request.body);
 
             const user = await prisma.user.findUnique({
@@ -137,18 +146,15 @@ class AdminController {
                                 id: user.schedules[0].id,
                             },
                             data: {
-                                startTime:
-                                    schedule.start ??
-                                    user.schedules[0].startTime,
-                                endTime:
-                                    schedule.end ?? user.schedules[0].endTime,
+                                hours:
+                                    schedule.hours ?? user.schedules[0].hours,
                             },
                         },
                     },
                 },
             });
 
-            return response.status(200).json("User updated successfully");
+            return response.status(200).json({ id, password, schedule });
         } catch (error) {
             next(error);
         }
@@ -166,7 +172,7 @@ class AdminController {
                 throw new AppError("User not found", 404);
             }
 
-            await prisma.technicianSchedule.deleteMany({
+            await prisma.engineerSchedule.deleteMany({
                 where: { userId: Number(id) },
             });
 
@@ -181,4 +187,4 @@ class AdminController {
     }
 }
 
-export { AdminController };
+export { EngineerController };

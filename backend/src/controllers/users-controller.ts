@@ -12,7 +12,7 @@ class UsersController {
                 password: z
                     .string()
                     .min(6, "Password must be at least 6 characters"),
-                role: z.enum(["admin", "tech"]).optional(),
+                role: z.enum(["admin", "engineer"]).optional(),
             });
 
             const { name, email, password, role } = bodySchema.parse(
