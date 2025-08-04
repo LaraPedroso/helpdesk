@@ -29,7 +29,7 @@ model User {
 
   role       UserRole @default(customer)
 
-  schedules   EngineerSchedule[]
+  schedules   EngineerSchedule[] // Horários disponíveis do técnico
   addedServices CalledService[]
 
   createdCalls Called[]        @relation("CustomerCalls")
@@ -80,7 +80,7 @@ model Called {
 
 
 
-model CalledService {
+model CalledService { // Relacionamento entre Chamados e Serviços
   id         Int      @id @default(autoincrement())
   calledId   Int
   serviceId  Int
