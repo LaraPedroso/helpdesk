@@ -13,4 +13,18 @@ customerRoutes.get(
     customerController.index
 );
 
+customerRoutes.put(
+    "/:id",
+    ensureAuthenticated,
+    verifyUserAuthorization(["admin", "customer"]),
+    customerController.update
+);
+
+customerRoutes.delete(
+    "/:id",
+    ensureAuthenticated,
+    verifyUserAuthorization(["admin", "customer"]),
+    customerController.delete
+);
+
 export { customerRoutes };

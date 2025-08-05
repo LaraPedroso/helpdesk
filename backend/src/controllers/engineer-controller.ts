@@ -99,7 +99,7 @@ class EngineerController {
             );
 
             if (users.length === 0) {
-                throw new AppError("No technicians found", 404);
+                throw new AppError("No engineers found", 404);
             }
 
             return response.status(200).json(usersWithoutPassword);
