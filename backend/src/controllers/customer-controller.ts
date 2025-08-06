@@ -3,35 +3,6 @@ import { hash } from "bcrypt";
 import { Request, Response, NextFunction } from "express";
 
 class CustomerController {
-    async create(request: Request, response: Response, next: NextFunction) {
-        try {
-            const { name, email, password } = request.body;
-
-            const existingCustomer = await prisma.user.findUnique({
-                where: { email },
-            });
-
-            if (existingCustomer) {
-                throw new Error("Customer already exists");
-            }
-
-            const customer = await prisma.user.create({
-                data: {
-                    name,
-                    email,
-                    password: await hash(password, 8),
-                    role: "customer",
-                },
-            });
-
-            const { password: _, ...customerWithoutPassword } = customer;
-
-            return response.status(201).json(customerWithoutPassword);
-        } catch (error) {
-            next(error);
-        }
-    }
-
     async index(request: Request, response: Response, next: NextFunction) {
         try {
             const customers = await prisma.user.findMany({
