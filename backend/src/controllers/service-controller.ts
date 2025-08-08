@@ -23,9 +23,7 @@ class ServiceController {
 
     async index(request: Request, response: Response, next: NextFunction) {
         try {
-            const services = await prisma.service.findMany({
-                where: { isActive: true },
-            });
+            const services = await prisma.service.findMany({});
 
             return response.status(200).json(services);
         } catch (error) {
@@ -44,7 +42,7 @@ class ServiceController {
                     name,
                     description,
                     price,
-                    category: category ?? "",
+                    category: category,
                 },
             });
 
@@ -58,9 +56,24 @@ class ServiceController {
         try {
             const { id } = request.params;
 
-            const service = await prisma.service.delete({
+            const service = await prisma.service.update({
                 where: { id: Number(id) },
+                data: {
+                    deletedAt: new Date() ?? null,
+                },
             });
+
+            if (Number(id) !== service.id) {
+                return response
+                    .status(404)
+                    .json({ error: "Service not found" });
+            }
+
+            if (service.id && service.deletedAt) {
+                return response
+                    .status(410)
+                    .json({ error: "Service already deleted" });
+            }
 
             return response.status(200).json(service);
         } catch (error) {
